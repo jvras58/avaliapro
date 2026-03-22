@@ -1,0 +1,125 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import type { GenerationResult } from "@/domain/types";
+
+interface Props {
+  examId: string;
+  questionCount: number;
+}
+
+export function ExamGeneratePanel({ examId, questionCount }: Props) {
+  const [count, setCount] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<GenerationResult | null>(null);
+
+  async function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setResult(null);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/exams/${examId}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Generation failed.");
+        return;
+      }
+      const data: GenerationResult = await res.json();
+      setResult(data);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function downloadCsv() {
+    if (!result) return;
+    const blob = new Blob([result.answerKeyCsv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "answer_key.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="space-y-6 max-w-lg">
+      <Card>
+        <CardHeader>
+          <CardTitle>Generation settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleGenerate} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="count">Number of exams</Label>
+              <Input
+                id="count"
+                type="number"
+                min={1}
+                max={200}
+                value={count}
+                onChange={(e) => setCount(Number(e.target.value))}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Each exam will have {questionCount} question
+                {questionCount !== 1 ? "s" : ""} in a randomised order.
+              </p>
+            </div>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Generating…" : "Generate"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {result && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Result</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm">
+              Generated{" "}
+              <strong>{result.exams.length}</strong> exam
+              {result.exams.length !== 1 ? "s" : ""} successfully.
+            </p>
+
+            <div className="rounded-md border p-3 bg-muted">
+              <p className="text-xs font-medium mb-1 text-muted-foreground uppercase tracking-wide">
+                Answer key preview
+              </p>
+              <pre className="text-xs overflow-x-auto whitespace-pre">
+                {result.answerKeyCsv}
+              </pre>
+            </div>
+
+            <Button variant="outline" onClick={downloadCsv}>
+              Download answer_key.csv
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
