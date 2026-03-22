@@ -7,15 +7,12 @@ import { renderExamPdf } from "@/domain/pdf";
  * The files inside the archive are named exam_1.pdf, exam_2.pdf, …
  */
 export async function bundleExamsPdf(exams: GeneratedExam[]): Promise<Buffer> {
+  const pdfs = await Promise.all(exams.map((exam) => renderExamPdf(exam)));
+
   const zip = new JSZip();
+  pdfs.forEach((pdf, i) => {
+    zip.file(`exam_${exams[i].examNumber}.pdf`, pdf);
+  });
 
-  await Promise.all(
-    exams.map(async (exam) => {
-      const pdf = await renderExamPdf(exam);
-      zip.file(`exam_${exam.examNumber}.pdf`, pdf);
-    })
-  );
-
-  const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-  return buffer;
+  return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

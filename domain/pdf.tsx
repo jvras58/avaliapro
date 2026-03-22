@@ -1,5 +1,4 @@
-import React from "react";
-import ReactPDF, {
+import {
   Document,
   Page,
   View,
@@ -132,7 +131,7 @@ function altLabel(index: number, mode: GeneratedExam["identificationMode"]): str
   if (mode === "letters") {
     return `${String.fromCharCode(65 + index)}.`;
   }
-  return `${Math.pow(2, index)}`;
+  return String(Math.pow(2, index));
 }
 
 // ---------------------------------------------------------------------------
@@ -148,9 +147,12 @@ function ExamDocument({ exam }: { exam: GeneratedExam }) {
           <Text style={styles.headerTitle}>{exam.title}</Text>
           <View style={styles.headerMeta}>
             <Text>
-              {exam.course ? `Disciplina: ${exam.course}` : ""}
-              {exam.course && exam.instructor ? "    " : ""}
-              {exam.instructor ? `Professor(a): ${exam.instructor}` : ""}
+              {[
+                exam.course ? `Disciplina: ${exam.course}` : "",
+                exam.instructor ? `Professor(a): ${exam.instructor}` : "",
+              ]
+                .filter(Boolean)
+                .join("    ")}
             </Text>
             <Text>{exam.date ? `Data: ${exam.date}` : ""}</Text>
           </View>
@@ -164,7 +166,7 @@ function ExamDocument({ exam }: { exam: GeneratedExam }) {
             </Text>
 
             {q.alternatives.map((alt, ai) => (
-              <View key={ai} style={styles.alternativeRow}>
+              <View key={alt.description} style={styles.alternativeRow}>
                 <Text style={styles.alternativeLabel}>
                   {altLabel(ai, exam.identificationMode)}
                 </Text>
@@ -211,5 +213,3 @@ export async function renderExamPdf(exam: GeneratedExam): Promise<Buffer> {
   return renderToBuffer(<ExamDocument exam={exam} />);
 }
 
-// Re-export for convenience (some callers may need it)
-export { ReactPDF };
