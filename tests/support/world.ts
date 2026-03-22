@@ -1,15 +1,22 @@
 import { setWorldConstructor, World, IWorldOptions } from "@cucumber/cucumber";
-import type { Question } from "@/domain/types";
+import type { Question, Exam, GradingReport, GenerationResult } from "@/domain/types";
 
 export interface AvaliaProWorld extends World {
-  /** Last question created or fetched during a scenario */
+  // ---- Questions ----
   currentQuestion: Question | null;
-  /** Last raw response from the domain (may be null on not-found) */
   lastResponse: Question | Question[] | null;
-  /** Last error thrown by the domain */
   lastError: Error | null;
-  /** Temporary statement held between two-step creation scenarios */
   pendingStatement: string;
+
+  // ---- Exams ----
+  currentExam: Exam | null;
+  lastExamResponse: Exam | Exam[] | null;
+
+  // ---- Generation ----
+  lastGenerationResult: GenerationResult | null;
+
+  // ---- Grading ----
+  lastGradingReport: GradingReport | null;
 }
 
 class AvaliaProWorldImpl extends World implements AvaliaProWorld {
@@ -17,6 +24,13 @@ class AvaliaProWorldImpl extends World implements AvaliaProWorld {
   lastResponse: Question | Question[] | null = null;
   lastError: Error | null = null;
   pendingStatement: string = "";
+
+  currentExam: Exam | null = null;
+  lastExamResponse: Exam | Exam[] | null = null;
+
+  lastGenerationResult: GenerationResult | null = null;
+
+  lastGradingReport: GradingReport | null = null;
 
   constructor(options: IWorldOptions) {
     super(options);
