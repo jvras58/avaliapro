@@ -1,0 +1,20 @@
+{
+  "default": {
+    "require": [
+      "tests/support/**/*.ts",
+      "tests/acceptance/steps/**/*.ts"
+    ],
+    "paths": [
+      "tests/acceptance/**/*.feature"
+    ],
+    "requireModule": [
+      "ts-node/register",
+      "tsconfig-paths/register"
+    ],
+    "format": [
+      "progress-bar",
+      "summary"
+    ],
+    "forceExit": true
+  }
+}
