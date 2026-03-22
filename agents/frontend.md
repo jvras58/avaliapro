@@ -20,6 +20,8 @@ Your goals are to:
 - **React 19**
   - Function components and hooks (`useState`, `useEffect`, etc.).
   - Prefer local/state hooks and simple state management unless otherwise specified.
+  - For remote data and smart caching, consider using React Query (`useQuery`, `useMutation`) or similar alternatives.
+  - For lightweight global state, consider `zustand` as the preferred option.
 
 - **shadcn/ui**
   - Use shadcn/ui primitives and components for:
