@@ -16,6 +16,7 @@ interface Props {
 export function ExamGeneratePanel({ examId, questionCount }: Props) {
   const [count, setCount] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerationResult | null>(null);
 
@@ -53,6 +54,35 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
     a.download = "answer_key.csv";
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function downloadPdfs() {
+    if (!result) return;
+    setPdfLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/exams/${examId}/generate?format=pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "PDF generation failed.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "exams.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Network error while generating PDFs. Please try again.");
+    } finally {
+      setPdfLoading(false);
+    }
   }
 
   return (
@@ -114,9 +144,14 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
               </pre>
             </div>
 
-            <Button variant="outline" onClick={downloadCsv}>
-              Download answer_key.csv
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={downloadCsv}>
+                Download answer_key.csv
+              </Button>
+              <Button variant="outline" onClick={downloadPdfs} disabled={pdfLoading}>
+                {pdfLoading ? "Generating PDFs…" : "Download PDFs (ZIP)"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

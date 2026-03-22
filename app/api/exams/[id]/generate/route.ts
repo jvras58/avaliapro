@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getExam } from "@/domain/exams";
 import { generateExams } from "@/domain/generation";
+import { bundleExamsPdf } from "@/domain/zip";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
+  const url = new URL(request.url);
+  const format = url.searchParams.get("format") ?? "json";
+
   try {
     const body: { count: number } = await request.json();
     const count = Number(body.count);
@@ -22,6 +26,18 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const result = generateExams(exam, count);
+
+    if (format === "pdf") {
+      const zipBuffer = await bundleExamsPdf(result.exams);
+      return new NextResponse(new Uint8Array(zipBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": `attachment; filename="exams_${id}.zip"`,
+        },
+      });
+    }
+
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     if (error instanceof Error) {
