@@ -31,8 +31,10 @@ Before(async function () {
 
 Given(
   "que o banco de dados está limpo",
-  async function (this: AvaliaProWorld) {
-    await prisma.question.deleteMany();
+  // The Before hook already wipes the DB before every scenario.
+  // This step exists purely for readability in the feature file.
+  function (this: AvaliaProWorld) {
+    // intentional no-op
   }
 );
 
@@ -70,17 +72,14 @@ When(
     // The table is a key-value layout: | enunciado | <value> |
     const raw = table.raw();
     const statementRow = raw.find((r) => r[0] === "enunciado");
-    const statement = statementRow ? statementRow[1] : "";
     // Store temporarily on the world; the next step finishes the creation.
-    (this as AvaliaProWorld & { _pendingStatement: string })._pendingStatement =
-      statement;
+    this.pendingStatement = statementRow ? statementRow[1] : "";
   }
 );
 
 When(
   "adiciono as seguintes alternativas:",
   async function (this: AvaliaProWorld, table: DataTable) {
-    const worldExt = this as AvaliaProWorld & { _pendingStatement: string };
     const rows = table.hashes() as { descrição: string; "deve marcar": string }[];
     const alternatives = rows.map((r) => ({
       description: r["descrição"],
@@ -89,7 +88,7 @@ When(
     this.lastError = null;
     try {
       this.currentQuestion = await createQuestion({
-        statement: worldExt._pendingStatement,
+        statement: this.pendingStatement,
         alternatives,
       });
       this.lastResponse = this.currentQuestion;

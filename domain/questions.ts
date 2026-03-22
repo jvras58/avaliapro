@@ -1,9 +1,16 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
   Question,
   CreateQuestionInput,
   UpdateQuestionInput,
 } from "@/domain/types";
+
+function isNotFoundError(e: unknown): boolean {
+  return (
+    e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025"
+  );
+}
 
 const includeAlternatives = { alternatives: true } as const;
 
@@ -49,34 +56,45 @@ export async function updateQuestion(
   id: string,
   input: UpdateQuestionInput
 ): Promise<Question> {
-  const existing = await prisma.question.findUnique({ where: { id } });
-  if (!existing) throw new Error("Question not found.");
+  if (input.statement !== undefined && !input.statement.trim()) {
+    throw new Error("Question statement must not be empty.");
+  }
+  if (input.alternatives !== undefined && input.alternatives.length < 2) {
+    throw new Error("A question must have at least 2 alternatives.");
+  }
 
-  return prisma.question.update({
-    where: { id },
-    data: {
-      ...(input.statement !== undefined && {
-        statement: input.statement.trim(),
-      }),
-      ...(input.alternatives !== undefined && {
-        alternatives: {
-          // Replace all alternatives: delete existing, create new ones.
-          deleteMany: {},
-          create: input.alternatives.map((a) => ({
-            description: a.description.trim(),
-            shouldBeMarked: a.shouldBeMarked,
-          })),
-        },
-      }),
-    },
-    include: includeAlternatives,
-  });
+  try {
+    return await prisma.question.update({
+      where: { id },
+      data: {
+        ...(input.statement !== undefined && {
+          statement: input.statement.trim(),
+        }),
+        ...(input.alternatives !== undefined && {
+          alternatives: {
+            // Replace all alternatives: delete existing, create new ones.
+            deleteMany: {},
+            create: input.alternatives.map((a) => ({
+              description: a.description.trim(),
+              shouldBeMarked: a.shouldBeMarked,
+            })),
+          },
+        }),
+      },
+      include: includeAlternatives,
+    });
+  } catch (e) {
+    if (isNotFoundError(e)) throw new Error("Question not found.");
+    throw e;
+  }
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
-  const existing = await prisma.question.findUnique({ where: { id } });
-  if (!existing) throw new Error("Question not found.");
-
-  // Alternatives are deleted via onDelete: Cascade in the schema.
-  await prisma.question.delete({ where: { id } });
+  try {
+    // Alternatives are deleted via onDelete: Cascade in the schema.
+    await prisma.question.delete({ where: { id } });
+  } catch (e) {
+    if (isNotFoundError(e)) throw new Error("Question not found.");
+    throw e;
+  }
 }
