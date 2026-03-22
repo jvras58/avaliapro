@@ -179,8 +179,8 @@ export function GradingPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {report.grades.map((g, i) => (
-                  <TableRow key={i}>
+                {report.grades.map((g) => (
+                  <TableRow key={g.studentId}>
                     <TableCell>{g.studentId}</TableCell>
                     <TableCell className="text-center">{g.examNumber}</TableCell>
                     <TableCell className="text-center font-medium">

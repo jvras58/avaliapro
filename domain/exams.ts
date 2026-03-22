@@ -14,9 +14,8 @@ function isNotFoundError(e: unknown): boolean {
 }
 
 // SQLite stores identificationMode as a plain string; cast it to our union.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toExam(raw: any): Exam {
-  return { ...raw, identificationMode: raw.identificationMode as IdentificationMode };
+function toExam(raw: Record<string, unknown> & { identificationMode: string }): Exam {
+  return { ...raw, identificationMode: raw.identificationMode as IdentificationMode } as Exam;
 }
 
 const includeQuestions = {

@@ -16,6 +16,8 @@ export interface AvaliaProWorld extends World {
   lastGenerationResult: GenerationResult | null;
 
   // ---- Grading ----
+  lastAnswerKeyCsv: string;
+  lastStudentAnswersCsv: string;
   lastGradingReport: GradingReport | null;
 }
 
@@ -30,6 +32,8 @@ class AvaliaProWorldImpl extends World implements AvaliaProWorld {
 
   lastGenerationResult: GenerationResult | null = null;
 
+  lastAnswerKeyCsv: string = "";
+  lastStudentAnswersCsv: string = "";
   lastGradingReport: GradingReport | null = null;
 
   constructor(options: IWorldOptions) {

@@ -6,14 +6,6 @@ import {
   parseStudentAnswersCsv,
   gradeExams,
 } from "@/domain/grading";
-import type { GradingMode } from "@/domain/types";
-
-// ---------------------------------------------------------------------------
-// State local to this step file (stored on world)
-// ---------------------------------------------------------------------------
-
-let _answerKeyCsv = "";
-let _studentAnswersCsv = "";
 
 // ---------------------------------------------------------------------------
 // Given
@@ -22,14 +14,14 @@ let _studentAnswersCsv = "";
 Given(
   "o gabarito CSV:",
   function (this: AvaliaProWorld, docString: string) {
-    _answerKeyCsv = docString;
+    this.lastAnswerKeyCsv = docString;
   }
 );
 
 Given(
   "as respostas dos alunos CSV:",
   function (this: AvaliaProWorld, docString: string) {
-    _studentAnswersCsv = docString;
+    this.lastStudentAnswersCsv = docString;
   }
 );
 
@@ -42,9 +34,9 @@ When(
   function (this: AvaliaProWorld) {
     this.lastError = null;
     try {
-      const keyRows = parseAnswerKeyCsv(_answerKeyCsv);
-      const studentRows = parseStudentAnswersCsv(_studentAnswersCsv);
-      this.lastGradingReport = gradeExams(keyRows, studentRows, "strict" as GradingMode);
+      const keyRows = parseAnswerKeyCsv(this.lastAnswerKeyCsv);
+      const studentRows = parseStudentAnswersCsv(this.lastStudentAnswersCsv);
+      this.lastGradingReport = gradeExams(keyRows, studentRows, "strict");
     } catch (e) {
       this.lastError = e as Error;
     }
@@ -56,9 +48,9 @@ When(
   function (this: AvaliaProWorld) {
     this.lastError = null;
     try {
-      const keyRows = parseAnswerKeyCsv(_answerKeyCsv);
-      const studentRows = parseStudentAnswersCsv(_studentAnswersCsv);
-      this.lastGradingReport = gradeExams(keyRows, studentRows, "lenient" as GradingMode);
+      const keyRows = parseAnswerKeyCsv(this.lastAnswerKeyCsv);
+      const studentRows = parseStudentAnswersCsv(this.lastStudentAnswersCsv);
+      this.lastGradingReport = gradeExams(keyRows, studentRows, "lenient");
     } catch (e) {
       this.lastError = e as Error;
     }

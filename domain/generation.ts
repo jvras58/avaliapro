@@ -41,7 +41,7 @@ function computeAnswer(
   if (mode === "letters") {
     const letters = alternatives
       .map((a, i) => (a.shouldBeMarked ? indexToLetter(i) : null))
-      .filter(Boolean);
+      .filter((l): l is string => l !== null);
     return letters.join("") || "-";
   } else {
     const sum = alternatives.reduce(
