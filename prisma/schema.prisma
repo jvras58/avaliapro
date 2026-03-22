@@ -1,0 +1,27 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id           String        @id @default(cuid())
+  statement    String
+  alternatives Alternative[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Alternative {
+  id             String   @id @default(cuid())
+  description    String
+  shouldBeMarked Boolean
+  questionId     String
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
