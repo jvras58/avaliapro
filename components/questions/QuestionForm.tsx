@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,65 +12,77 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { Question, AlternativeInput } from "@/domain/types";
+import type { Question } from "@/domain/types";
+
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+
+const alternativeSchema = z.object({
+  description: z.string().min(1, "Alternative text is required"),
+  shouldBeMarked: z.boolean(),
+});
+
+const questionSchema = z.object({
+  statement: z.string().min(1, "Statement is required"),
+  alternatives: z
+    .array(alternativeSchema)
+    .min(2, "At least two alternatives are required"),
+});
+
+type QuestionFormValues = z.infer<typeof questionSchema>;
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 interface Props {
   /** When provided, the form operates in edit mode. */
   initialData?: Question;
 }
 
-interface AlternativeRow extends AlternativeInput {
-  /** Stable key for React list rendering */
-  key: string;
-}
-
-function emptyAlternative(): AlternativeRow {
-  return { key: crypto.randomUUID(), description: "", shouldBeMarked: false };
-}
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export function QuestionForm({ initialData }: Props) {
   const router = useRouter();
   const isEdit = Boolean(initialData);
-
-  const [statement, setStatement] = useState(initialData?.statement ?? "");
-  const [alternatives, setAlternatives] = useState<AlternativeRow[]>(
-    initialData && initialData.alternatives.length > 0
-      ? initialData.alternatives.map((a) => ({
-          key: a.id,
-          description: a.description,
-          shouldBeMarked: a.shouldBeMarked,
-        }))
-      : [emptyAlternative(), emptyAlternative()]
-  );
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function addAlternative() {
-    setAlternatives((prev) => [...prev, emptyAlternative()]);
-  }
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    setError,
+    formState: { errors },
+  } = useForm<QuestionFormValues>({
+    resolver: zodResolver(questionSchema),
+    defaultValues: {
+      statement: initialData?.statement ?? "",
+      alternatives:
+        initialData && initialData.alternatives.length > 0
+          ? initialData.alternatives.map((a) => ({
+              description: a.description,
+              shouldBeMarked: a.shouldBeMarked,
+            }))
+          : [
+              { description: "", shouldBeMarked: false },
+              { description: "", shouldBeMarked: false },
+            ],
+    },
+  });
 
-  function removeAlternative(key: string) {
-    setAlternatives((prev) => prev.filter((a) => a.key !== key));
-  }
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "alternatives",
+  });
 
-  function updateAlternative(key: string, patch: Partial<AlternativeInput>) {
-    setAlternatives((prev) =>
-      prev.map((a) => (a.key === key ? { ...a, ...patch } : a))
-    );
-  }
+  const watchedAlternatives = watch("alternatives");
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    const payload = {
-      statement,
-      alternatives: alternatives.map(({ description, shouldBeMarked }) => ({
-        description,
-        shouldBeMarked,
-      })),
-    };
-
+  function onSubmit(values: QuestionFormValues) {
     startTransition(async () => {
       try {
         const url = isEdit
@@ -78,25 +93,27 @@ export function QuestionForm({ initialData }: Props) {
         const res = await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(values),
         });
 
         if (!res.ok) {
           const data = await res.json();
-          setError(data.error ?? "An unexpected error occurred.");
+          setError("root", {
+            message: data.error ?? "An unexpected error occurred.",
+          });
           return;
         }
 
         router.push("/questions");
         router.refresh();
       } catch {
-        setError("Network error. Please try again.");
+        setError("root", { message: "Network error. Please try again." });
       }
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
       <Card>
         <CardHeader>
           <CardTitle>{isEdit ? "Edit Question" : "New Question"}</CardTitle>
@@ -106,44 +123,51 @@ export function QuestionForm({ initialData }: Props) {
             <Label htmlFor="statement">Statement</Label>
             <Textarea
               id="statement"
-              value={statement}
-              onChange={(e) => setStatement(e.target.value)}
+              {...register("statement")}
               placeholder="Enter the question statement…"
               rows={3}
-              required
             />
+            {errors.statement && (
+              <p className="text-sm text-destructive">
+                {errors.statement.message}
+              </p>
+            )}
           </div>
 
           <Separator />
 
           <div className="space-y-3">
             <p className="text-sm font-medium">Alternatives</p>
-            {alternatives.map((alt, index) => (
-              <div key={alt.key} className="flex items-start gap-3">
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-start gap-3">
                 <span className="mt-2 text-sm text-muted-foreground w-5 shrink-0">
                   {index + 1}.
                 </span>
-                <Input
-                  value={alt.description}
-                  onChange={(e) =>
-                    updateAlternative(alt.key, { description: e.target.value })
-                  }
-                  placeholder={`Alternative ${index + 1}`}
-                  required
-                  className="flex-1"
-                />
+                <div className="flex-1 space-y-1">
+                  <Input
+                    {...register(`alternatives.${index}.description`)}
+                    placeholder={`Alternative ${index + 1}`}
+                  />
+                  {errors.alternatives?.[index]?.description && (
+                    <p className="text-xs text-destructive">
+                      {errors.alternatives[index]!.description!.message}
+                    </p>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 mt-2 shrink-0">
                   <Checkbox
-                    id={`correct-${alt.key}`}
-                    checked={alt.shouldBeMarked}
+                    id={`correct-${field.id}`}
+                    checked={watchedAlternatives[index]?.shouldBeMarked ?? false}
                     onCheckedChange={(checked) =>
-                      updateAlternative(alt.key, {
-                        shouldBeMarked: checked === true,
-                      })
+                      setValue(
+                        `alternatives.${index}.shouldBeMarked`,
+                        checked === true,
+                        { shouldValidate: true }
+                      )
                     }
                   />
                   <Label
-                    htmlFor={`correct-${alt.key}`}
+                    htmlFor={`correct-${field.id}`}
                     className="text-xs cursor-pointer"
                   >
                     Correct
@@ -154,8 +178,8 @@ export function QuestionForm({ initialData }: Props) {
                   variant="ghost"
                   size="icon"
                   className="mt-1 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeAlternative(alt.key)}
-                  disabled={alternatives.length <= 2}
+                  onClick={() => remove(index)}
+                  disabled={fields.length <= 2}
                   aria-label="Remove alternative"
                 >
                   ✕
@@ -167,7 +191,7 @@ export function QuestionForm({ initialData }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={addAlternative}
+              onClick={() => append({ description: "", shouldBeMarked: false })}
             >
               + Add alternative
             </Button>
@@ -175,8 +199,8 @@ export function QuestionForm({ initialData }: Props) {
         </CardContent>
       </Card>
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
+      {errors.root && (
+        <p className="text-sm text-destructive">{errors.root.message}</p>
       )}
 
       <div className="flex gap-3">
