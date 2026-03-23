@@ -18,6 +18,9 @@ The `revisor` agent is responsible for reviewing the codebase to ensure adherenc
 - **Encourage use of `useQuery` for data fetching, caching, and validation:**
   - Recommend `useQuery` (from TanStack Query) for remote data management.
   - Ensure proper cache and validation strategies are in place.
+- **Promote integration of TanStack Query and Zod with React Hook Form:**
+  - Recommend setting up TanStack Query for data fetching and caching.
+  - Encourage the use of Zod for schema validation in forms, especially with React Hook Form.
 - **General Next.js 16 and React 19 best practices:**
   - Promote server components where appropriate.
   - Ensure correct separation of client/server logic.
