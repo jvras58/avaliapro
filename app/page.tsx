@@ -44,7 +44,7 @@ export default async function HomePage() {
                 {label}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 flex flex-col justify-between h-full">
               <p className="text-4xl font-bold">{value}</p>
               <Button asChild variant="outline" size="sm">
                 <Link href={href}>{action}</Link>
@@ -59,7 +59,7 @@ export default async function HomePage() {
               Grading
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 flex flex-col justify-between h-full">
             <p className="text-sm text-muted-foreground">
               Upload answer key and student responses to compute grades.
             </p>
