@@ -134,7 +134,7 @@ API layer (app/api/**/route.ts)
 Domain layer (domain/*.ts)
        │  calls Prisma
        ▼
-Database (SQLite via Prisma)
+Database (via Prisma)
 ```
 
 ### Domain layer
@@ -184,7 +184,7 @@ Pages under `app/` are React Server Components by default. They call domain func
 
 ### Database layer
 
-Prisma is configured with SQLite for development. The singleton client in `lib/prisma.ts` uses the `globalThis` pattern so Next.js hot-reload does not open multiple connections:
+Prisma is configured with for development. The singleton client in `lib/prisma.ts` uses the `globalThis` pattern so Next.js hot-reload does not open multiple connections:
 
 ```typescript
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
@@ -192,7 +192,7 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({ ... });
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
-SQLite does not support native enums. The `identificationMode` column is stored as a plain `string`. A `toExam()` cast helper in `domain/exams.ts` narrows the Prisma result to the `IdentificationMode` union at the service boundary so the rest of the codebase remains type-safe.
+The `identificationMode` column is stored as a plain `string`. A `toExam()` cast helper in `domain/exams.ts` narrows the Prisma result to the `IdentificationMode` union at the service boundary so the rest of the codebase remains type-safe.
 
 ---
 
@@ -394,21 +394,49 @@ Current result: **33 scenarios, 147 steps, all passing**.
 
 ## Getting started
 
+### 1) Instalar dependências
+
 ```bash
-# 1. Install dependencies
 npm install
+```
 
-# 2. Create the environment file
-echo 'DATABASE_URL="file:./prisma/dev.db"' > .env
+### 2) Escolher banco de dados
 
-# 3. Run database migrations and generate Prisma client
+Opção A — Postgres com Docker Compose (recomendado para ambiente parecido com a produção):
+
+```bash
+docker compose up -d
+```
+
+Crie `.env`:
+
+```bash
+cat > .env <<EOF
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/avaliapro?schema=public"
+EOF
+```
+
+Opção B — SQLite local (não precisa do compose):
+
+```bash
+cat > .env <<EOF
+DATABASE_URL="file:./prisma/dev.db"
+EOF
+```
+
+### 3) Migrar banco e gerar Prisma client
+
+```bash
 npx prisma migrate dev
+```
 
-# 4. Start the development server
+### 4) Iniciar servidor
+
+```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Abra `http://localhost:3000`.
 
 ---
 
