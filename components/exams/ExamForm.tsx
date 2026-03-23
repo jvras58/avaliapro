@@ -93,6 +93,7 @@ export function ExamForm({ allQuestions, initialData }: Props) {
           queryKey: queryKeys.exam(initialData.id),
         });
       }
+      router.refresh();
       router.push("/exams");
     },
     onError: (err: Error) => {

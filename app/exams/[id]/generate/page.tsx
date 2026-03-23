@@ -3,8 +3,6 @@ import { getExam } from "@/domain/exams";
 import { ExamGeneratePanel } from "@/components/exams/ExamGeneratePanel";
 import { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Generate Exam",
 };

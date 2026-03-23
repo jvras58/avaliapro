@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -20,6 +21,7 @@ interface Props {
 
 export function QuestionList({ questions }: Props) {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data } = useQuery({
     queryKey: queryKeys.questions,
@@ -35,6 +37,7 @@ export function QuestionList({ questions }: Props) {
     mutationFn: deleteQuestion,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.questions });
+      router.refresh();
     },
     onError: () => {
       alert("Failed to delete question.");

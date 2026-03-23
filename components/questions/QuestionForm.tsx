@@ -95,6 +95,7 @@ export function QuestionForm({ initialData }: Props) {
           queryKey: queryKeys.question(initialData.id),
         });
       }
+      router.refresh();
       router.push("/questions");
     },
     onError: (err: Error) => {

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ExamList } from "@/components/exams/ExamList";
 import { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Exams",
