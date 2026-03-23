@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 const navLinks = [
   { href: "/questions", label: "Questions" },
@@ -12,6 +15,9 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   return (
     <header className="bg-background border-b">
@@ -36,6 +42,19 @@ export function Navbar() {
             );
           })}
         </nav>
+        <div className="ml-auto flex items-center gap-2">
+          {mounted && (
+            <>
+              <span className="text-xs text-muted-foreground">🌞</span>
+              <Switch
+                checked={resolvedTheme === "dark"}
+                onCheckedChange={checked => setTheme(checked ? "dark" : "light")}
+                aria-label="Alternar tema escuro/claro"
+              />
+              <span className="text-xs text-muted-foreground">🌚</span>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
