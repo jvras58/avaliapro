@@ -1,10 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { Question } from "@/domain/types";
+import { queryKeys, createQuestion, updateQuestion } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -47,8 +48,8 @@ interface Props {
 
 export function QuestionForm({ initialData }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(initialData);
-  const [isPending, startTransition] = useTransition();
 
   const {
     register,
@@ -82,34 +83,27 @@ export function QuestionForm({ initialData }: Props) {
 
   const watchedAlternatives = watch("alternatives");
 
-  function onSubmit(values: QuestionFormValues) {
-    startTransition(async () => {
-      try {
-        const url = isEdit
-          ? `/api/questions/${initialData!.id}`
-          : "/api/questions";
-        const method = isEdit ? "PUT" : "POST";
-
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
+  const saveMutation = useMutation({
+    mutationFn: (values: QuestionFormValues) =>
+      isEdit
+        ? updateQuestion(initialData!.id, values)
+        : createQuestion(values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.questions });
+      if (initialData) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.question(initialData.id),
         });
-
-        if (!res.ok) {
-          const data = await res.json();
-          setError("root", {
-            message: data.error ?? "An unexpected error occurred.",
-          });
-          return;
-        }
-
-        router.push("/questions");
-        router.refresh();
-      } catch {
-        setError("root", { message: "Network error. Please try again." });
       }
-    });
+      router.push("/questions");
+    },
+    onError: (err: Error) => {
+      setError("root", { message: err.message });
+    },
+  });
+
+  function onSubmit(values: QuestionFormValues) {
+    saveMutation.mutate(values);
   }
 
   return (
@@ -204,8 +198,8 @@ export function QuestionForm({ initialData }: Props) {
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving…" : isEdit ? "Save changes" : "Create question"}
+        <Button type="submit" disabled={saveMutation.isPending}>
+          {saveMutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create question"}
         </Button>
         <Button
           type="button"
