@@ -15,7 +15,9 @@ export async function GET(_request: Request, { params }: Params) {
     if (!question) {
       return NextResponse.json({ error: "Question not found." }, { status: 404 });
     }
-    return NextResponse.json(question);
+    return NextResponse.json(question, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     console.error("[GET /api/questions/:id]", error);
     return NextResponse.json(
