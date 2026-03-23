@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,59 +18,76 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Exam, Question, IdentificationMode } from "@/domain/types";
+import type { Exam, Question } from "@/domain/types";
+
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+
+const examSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  course: z.string(),
+  instructor: z.string(),
+  date: z.string(),
+  identificationMode: z.enum(["letters", "powers_of_2"]),
+  questionIds: z.array(z.string()).min(1, "Select at least one question"),
+});
+
+type ExamFormValues = z.infer<typeof examSchema>;
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 interface Props {
   allQuestions: Question[];
   initialData?: Exam;
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export function ExamForm({ allQuestions, initialData }: Props) {
   const router = useRouter();
   const isEdit = Boolean(initialData);
-
-  const [title, setTitle] = useState(initialData?.title ?? "");
-  const [course, setCourse] = useState(initialData?.course ?? "");
-  const [instructor, setInstructor] = useState(initialData?.instructor ?? "");
-  const [date, setDate] = useState(initialData?.date ?? "");
-  const [mode, setMode] = useState<IdentificationMode>(
-    initialData?.identificationMode ?? "letters"
-  );
-  const [selectedIds, setSelectedIds] = useState<string[]>(
-    initialData
-      ? initialData.questions
-          .slice()
-          .sort((a, b) => a.position - b.position)
-          .map((eq) => eq.questionId)
-      : []
-  );
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    setError,
+    formState: { errors },
+  } = useForm<ExamFormValues>({
+    resolver: zodResolver(examSchema),
+    defaultValues: {
+      title: initialData?.title ?? "",
+      course: initialData?.course ?? "",
+      instructor: initialData?.instructor ?? "",
+      date: initialData?.date ?? "",
+      identificationMode: initialData?.identificationMode ?? "letters",
+      questionIds: initialData
+        ? initialData.questions
+            .slice()
+            .sort((a, b) => a.position - b.position)
+            .map((eq) => eq.questionId)
+        : [],
+    },
+  });
+
+  const selectedIds = watch("questionIds");
+  const mode = watch("identificationMode");
+
   function toggleQuestion(id: string) {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((q) => q !== id) : [...prev, id]
-    );
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter((q) => q !== id)
+      : [...selectedIds, id];
+    setValue("questionIds", next, { shouldValidate: true });
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    if (selectedIds.length === 0) {
-      setError("Select at least one question.");
-      return;
-    }
-
-    const payload = {
-      title,
-      course,
-      instructor,
-      date,
-      identificationMode: mode,
-      questionIds: selectedIds,
-    };
-
+  function onSubmit(values: ExamFormValues) {
     startTransition(async () => {
       try {
         const url = isEdit ? `/api/exams/${initialData!.id}` : "/api/exams";
@@ -76,25 +96,27 @@ export function ExamForm({ allQuestions, initialData }: Props) {
         const res = await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(values),
         });
 
         if (!res.ok) {
           const data = await res.json();
-          setError(data.error ?? "An unexpected error occurred.");
+          setError("root", {
+            message: data.error ?? "An unexpected error occurred.",
+          });
           return;
         }
 
         router.push("/exams");
         router.refresh();
       } catch {
-        setError("Network error. Please try again.");
+        setError("root", { message: "Network error. Please try again." });
       }
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
       <Card>
         <CardHeader>
           <CardTitle>{isEdit ? "Edit Exam" : "New Exam"}</CardTitle>
@@ -105,19 +127,19 @@ export function ExamForm({ allQuestions, initialData }: Props) {
             <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register("title")}
               placeholder="Exam title"
-              required
             />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title.message}</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="course">Course</Label>
               <Input
                 id="course"
-                value={course}
-                onChange={(e) => setCourse(e.target.value)}
+                {...register("course")}
                 placeholder="e.g. Computer Science 101"
               />
             </div>
@@ -125,8 +147,7 @@ export function ExamForm({ allQuestions, initialData }: Props) {
               <Label htmlFor="instructor">Instructor</Label>
               <Input
                 id="instructor"
-                value={instructor}
-                onChange={(e) => setInstructor(e.target.value)}
+                {...register("instructor")}
                 placeholder="Instructor name"
               />
             </div>
@@ -136,8 +157,7 @@ export function ExamForm({ allQuestions, initialData }: Props) {
               <Label htmlFor="date">Date</Label>
               <Input
                 id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                {...register("date")}
                 placeholder="e.g. 2025-06-15"
               />
             </div>
@@ -145,7 +165,13 @@ export function ExamForm({ allQuestions, initialData }: Props) {
               <Label htmlFor="mode">Identification mode</Label>
               <Select
                 value={mode}
-                onValueChange={(v) => setMode(v as IdentificationMode)}
+                onValueChange={(v) =>
+                  setValue(
+                    "identificationMode",
+                    v as ExamFormValues["identificationMode"],
+                    { shouldValidate: true }
+                  )
+                }
               >
                 <SelectTrigger id="mode">
                   <SelectValue />
@@ -204,11 +230,18 @@ export function ExamForm({ allQuestions, initialData }: Props) {
                 })}
               </div>
             )}
+            {errors.questionIds && (
+              <p className="text-sm text-destructive">
+                {errors.questionIds.message}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {errors.root && (
+        <p className="text-sm text-destructive">{errors.root.message}</p>
+      )}
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isPending}>
