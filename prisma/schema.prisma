@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -29,27 +29,26 @@ model Alternative {
 
 // identificationMode: "letters" | "powers_of_2"
 model Exam {
-  id                 String        @id @default(cuid())
+  id                 String         @id @default(cuid())
   title              String
-  course             String        @default("")
-  instructor         String        @default("")
-  date               String        @default("")
-  identificationMode String        @default("letters")
+  course             String         @default("")
+  instructor         String         @default("")
+  date               String         @default("")
+  identificationMode String         @default("letters")
   questions          ExamQuestion[]
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 }
 
 // Join table that preserves the order the user chose for each question in an exam
 model ExamQuestion {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   examId     String
   questionId String
   position   Int
-  exam       Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  exam       Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
   question   Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
   @@unique([examId, questionId])
   @@index([examId, position])
 }
-
