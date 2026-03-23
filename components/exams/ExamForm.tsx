@@ -1,10 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Exam, Question } from "@/domain/types";
+import { queryKeys, createExamApi, updateExamApi } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -50,8 +51,8 @@ interface Props {
 
 export function ExamForm({ allQuestions, initialData }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(initialData);
-  const [isPending, startTransition] = useTransition();
 
   const {
     register,
@@ -80,6 +81,25 @@ export function ExamForm({ allQuestions, initialData }: Props) {
   const selectedIds = watch("questionIds");
   const mode = watch("identificationMode");
 
+  const saveMutation = useMutation({
+    mutationFn: (values: ExamFormValues) =>
+      isEdit
+        ? updateExamApi(initialData!.id, values)
+        : createExamApi(values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.exams });
+      if (initialData) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.exam(initialData.id),
+        });
+      }
+      router.push("/exams");
+    },
+    onError: (err: Error) => {
+      setError("root", { message: err.message });
+    },
+  });
+
   function toggleQuestion(id: string) {
     const next = selectedIds.includes(id)
       ? selectedIds.filter((q) => q !== id)
@@ -88,31 +108,7 @@ export function ExamForm({ allQuestions, initialData }: Props) {
   }
 
   function onSubmit(values: ExamFormValues) {
-    startTransition(async () => {
-      try {
-        const url = isEdit ? `/api/exams/${initialData!.id}` : "/api/exams";
-        const method = isEdit ? "PUT" : "POST";
-
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          setError("root", {
-            message: data.error ?? "An unexpected error occurred.",
-          });
-          return;
-        }
-
-        router.push("/exams");
-        router.refresh();
-      } catch {
-        setError("root", { message: "Network error. Please try again." });
-      }
-    });
+    saveMutation.mutate(values);
   }
 
   return (
@@ -244,8 +240,8 @@ export function ExamForm({ allQuestions, initialData }: Props) {
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving…" : isEdit ? "Save changes" : "Create exam"}
+        <Button type="submit" disabled={saveMutation.isPending}>
+          {saveMutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create exam"}
         </Button>
         <Button
           type="button"
