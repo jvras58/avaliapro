@@ -5,7 +5,9 @@ import type { CreateExamInput } from "@/domain/types";
 export async function GET() {
   try {
     const exams = await listExams();
-    return NextResponse.json(exams);
+    return NextResponse.json(exams, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     console.error("[GET /api/exams]", error);
     return NextResponse.json(
