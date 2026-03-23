@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,14 +13,17 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/layout/EmptyState";
 import type { Exam } from "@/domain/types";
 import { queryKeys, fetchExams, deleteExam } from "@/lib/api";
 
 interface Props {
   exams: Exam[];
+  /** Called when the empty-state CTA is clicked (e.g. to open the inline form) */
+  onCreateClick?: () => void;
 }
 
-export function ExamList({ exams }: Props) {
+export function ExamList({ exams, onCreateClick }: Props) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
@@ -45,12 +49,16 @@ export function ExamList({ exams }: Props) {
 
   if (data.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No exams yet.{" "}
-        <Link href="/exams/new" className="underline">
-          Create the first one.
-        </Link>
-      </p>
+      <EmptyState
+        icon={<FileText className="h-7 w-7" />}
+        title="No exams yet"
+        description="Create your first exam by selecting questions and configuring the details."
+        action={
+          onCreateClick
+            ? { label: "New exam", onClick: onCreateClick }
+            : undefined
+        }
+      />
     );
   }
 
@@ -66,7 +74,7 @@ export function ExamList({ exams }: Props) {
       </TableHeader>
       <TableBody>
         {data.map((exam) => (
-          <TableRow key={exam.id}>
+          <TableRow key={exam.id} className="transition-colors hover:bg-muted/40">
             <TableCell>
               <p className="font-medium">{exam.title}</p>
               {exam.course && (

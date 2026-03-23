@@ -43,13 +43,17 @@ type ExamFormValues = z.infer<typeof examSchema>;
 interface Props {
   allQuestions: Question[];
   initialData?: Exam;
+  /** Called after a successful create/update instead of navigating away. */
+  onSuccess?: () => void;
+  /** Called when the user clicks Cancel instead of navigating away. */
+  onCancel?: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function ExamForm({ allQuestions, initialData }: Props) {
+export function ExamForm({ allQuestions, initialData, onSuccess, onCancel }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isEdit = Boolean(initialData);
@@ -93,7 +97,11 @@ export function ExamForm({ allQuestions, initialData }: Props) {
           queryKey: queryKeys.exam(initialData.id),
         });
       }
-      router.push("/exams");
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/exams");
+      }
     },
     onError: (err: Error) => {
       setError("root", { message: err.message });
@@ -246,7 +254,7 @@ export function ExamForm({ allQuestions, initialData }: Props) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push("/exams")}
+          onClick={() => (onCancel ? onCancel() : router.push("/exams"))}
         >
           Cancel
         </Button>

@@ -40,13 +40,17 @@ type QuestionFormValues = z.infer<typeof questionSchema>;
 interface Props {
   /** When provided, the form operates in edit mode. */
   initialData?: Question;
+  /** Called after a successful create/update instead of navigating away. */
+  onSuccess?: () => void;
+  /** Called when the user clicks Cancel instead of navigating away. */
+  onCancel?: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function QuestionForm({ initialData }: Props) {
+export function QuestionForm({ initialData, onSuccess, onCancel }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isEdit = Boolean(initialData);
@@ -95,7 +99,11 @@ export function QuestionForm({ initialData }: Props) {
           queryKey: queryKeys.question(initialData.id),
         });
       }
-      router.push("/questions");
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/questions");
+      }
     },
     onError: (err: Error) => {
       setError("root", { message: err.message });
@@ -204,7 +212,7 @@ export function QuestionForm({ initialData }: Props) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push("/questions")}
+          onClick={() => (onCancel ? onCancel() : router.push("/questions"))}
         >
           Cancel
         </Button>

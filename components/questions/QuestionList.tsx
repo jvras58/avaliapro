@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ClipboardList } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,14 +12,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/layout/EmptyState";
 import type { Question } from "@/domain/types";
 import { queryKeys, fetchQuestions, deleteQuestion } from "@/lib/api";
 
 interface Props {
   questions: Question[];
+  /** Called when the empty-state CTA is clicked (e.g. to open the inline form) */
+  onCreateClick?: () => void;
 }
 
-export function QuestionList({ questions }: Props) {
+export function QuestionList({ questions, onCreateClick }: Props) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
@@ -44,12 +48,16 @@ export function QuestionList({ questions }: Props) {
 
   if (data.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No questions yet.{" "}
-        <Link href="/questions/new" className="underline">
-          Create the first one.
-        </Link>
-      </p>
+      <EmptyState
+        icon={<ClipboardList className="h-7 w-7" />}
+        title="No questions yet"
+        description="Create your first question to start building exams."
+        action={
+          onCreateClick
+            ? { label: "New question", onClick: onCreateClick }
+            : undefined
+        }
+      />
     );
   }
 
@@ -64,7 +72,7 @@ export function QuestionList({ questions }: Props) {
       </TableHeader>
       <TableBody>
         {data.map((q) => (
-          <TableRow key={q.id}>
+          <TableRow key={q.id} className="transition-colors hover:bg-muted/40">
             <TableCell className="max-w-xl">
               <p className="line-clamp-2">{q.statement}</p>
             </TableCell>
