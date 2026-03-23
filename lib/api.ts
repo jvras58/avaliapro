@@ -123,3 +123,39 @@ export async function deleteExam(id: string): Promise<void> {
   const res = await fetch(`/api/exams/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete exam");
 }
+
+// ---------------------------------------------------------------------------
+// Exam generation
+// ---------------------------------------------------------------------------
+
+export async function generateExamJson(
+  examId: string,
+  count: number
+): Promise<import("@/domain/types").GenerationResult> {
+  const res = await fetch(`/api/exams/${examId}/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ count }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error ?? "Generation failed.");
+  }
+  return res.json();
+}
+
+export async function generateExamPdf(
+  examId: string,
+  count: number
+): Promise<Blob> {
+  const res = await fetch(`/api/exams/${examId}/generate?format=pdf`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ count }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error ?? "PDF generation failed.");
+  }
+  return res.blob();
+}
