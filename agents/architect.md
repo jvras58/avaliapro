@@ -12,7 +12,7 @@ Your responsibilities are to:
   - Next.js 16 with App Router.
   - React 19.
   - Backend in `app/api` using TypeScript.
-  - PostgreSQL via Prisma with SQLite as the development database.
+  - PostgreSQL via Prisma with Postgresql as the development database.
   - Acceptance tests with Gherkin/Cucumber. 
 
 ## Main Requirements (Summary)
