@@ -1,87 +1,98 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { GenerationResult } from "@/domain/types";
+import { generateExamJson, generateExamPdf } from "@/lib/api";
+
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+
+const generateSchema = z.object({
+  count: z
+    .number({ message: "Enter a valid number" })
+    .int("Must be a whole number")
+    .min(1, "At least 1 exam required")
+    .max(200, "Maximum 200 exams"),
+});
+
+type GenerateFormValues = z.infer<typeof generateSchema>;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 interface Props {
   examId: string;
   questionCount: number;
 }
 
-export function ExamGeneratePanel({ examId, questionCount }: Props) {
-  const [count, setCount] = useState(1);
-  const [isGenerating, startGenerate] = useTransition();
-  const [isPdfPending, startPdf] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<GenerationResult | null>(null);
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
-  function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setResult(null);
-    startGenerate(async () => {
-      try {
-        const res = await fetch(`/api/exams/${examId}/generate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ count }),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error ?? "Generation failed.");
-          return;
-        }
-        const data: GenerationResult = await res.json();
-        setResult(data);
-      } catch {
-        setError("Network error. Please try again.");
-      }
-    });
+export function ExamGeneratePanel({ examId, questionCount }: Props) {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<GenerateFormValues>({
+    resolver: zodResolver(generateSchema),
+    defaultValues: { count: 1 },
+  });
+
+  const count = watch("count");
+
+  const generateMutation = useMutation({
+    mutationFn: (values: GenerateFormValues) =>
+      generateExamJson(examId, values.count),
+  });
+
+  const pdfMutation = useMutation({
+    mutationFn: () => generateExamPdf(examId, count),
+    onSuccess: (blob) => {
+      triggerDownload(blob, "exams.zip");
+    },
+  });
+
+  function onSubmit(values: GenerateFormValues) {
+    generateMutation.mutate(values);
   }
 
   function downloadCsv() {
-    if (!result) return;
-    const blob = new Blob([result.answerKeyCsv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "answer_key.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!generateMutation.data) return;
+    const blob = new Blob([generateMutation.data.answerKeyCsv], {
+      type: "text/csv",
+    });
+    triggerDownload(blob, "answer_key.csv");
   }
 
-  function downloadPdfs() {
-    if (!result) return;
-    setError(null);
-    startPdf(async () => {
-      try {
-        const res = await fetch(`/api/exams/${examId}/generate?format=pdf`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ count }),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error ?? "PDF generation failed.");
-          return;
-        }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "exams.zip";
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch {
-        setError("Network error while generating PDFs. Please try again.");
-      }
-    });
-  }
+  const result = generateMutation.data ?? null;
+  const error =
+    (generateMutation.error as Error | null)?.message ??
+    (pdfMutation.error as Error | null)?.message ??
+    null;
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -90,7 +101,7 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
           <CardTitle>Generation settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleGenerate} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="count">Number of exams</Label>
               <Input
@@ -98,17 +109,20 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
                 type="number"
                 min={1}
                 max={200}
-                value={count}
-                onChange={(e) => setCount(Number(e.target.value))}
-                required
+                {...register("count", { valueAsNumber: true })}
               />
+              {errors.count && (
+                <p className="text-xs text-destructive">
+                  {errors.count.message}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Each exam will have {questionCount} question
                 {questionCount !== 1 ? "s" : ""} in a randomised order.
               </p>
             </div>
-            <Button type="submit" disabled={isGenerating}>
-              {isGenerating ? "Generating…" : "Generate"}
+            <Button type="submit" disabled={generateMutation.isPending}>
+              {generateMutation.isPending ? "Generating…" : "Generate"}
             </Button>
           </form>
         </CardContent>
@@ -146,8 +160,14 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
               <Button variant="outline" onClick={downloadCsv}>
                 Download answer_key.csv
               </Button>
-              <Button variant="outline" onClick={downloadPdfs} disabled={isPdfPending}>
-                {isPdfPending ? "Generating PDFs…" : "Download PDFs (ZIP)"}
+              <Button
+                variant="outline"
+                onClick={() => pdfMutation.mutate()}
+                disabled={pdfMutation.isPending}
+              >
+                {pdfMutation.isPending
+                  ? "Generating PDFs…"
+                  : "Download PDFs (ZIP)"}
               </Button>
             </div>
           </CardContent>
