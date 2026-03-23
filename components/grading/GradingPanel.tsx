@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,11 +36,11 @@ export function GradingPanel() {
   const [answerKeyFile, setAnswerKeyFile] = useState<File | null>(null);
   const [studentsFile, setStudentsFile] = useState<File | null>(null);
   const [mode, setMode] = useState<GradingMode>("strict");
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<GradingReport | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!answerKeyFile || !studentsFile) {
       setError("Please upload both CSV files.");
@@ -48,32 +48,31 @@ export function GradingPanel() {
     }
     setError(null);
     setReport(null);
-    setLoading(true);
-    try {
-      const [answerKeyCsv, studentAnswersCsv] = await Promise.all([
-        readFileAsText(answerKeyFile),
-        readFileAsText(studentsFile),
-      ]);
+    startTransition(async () => {
+      try {
+        const [answerKeyCsv, studentAnswersCsv] = await Promise.all([
+          readFileAsText(answerKeyFile),
+          readFileAsText(studentsFile),
+        ]);
 
-      const res = await fetch("/api/grading", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answerKeyCsv, studentAnswersCsv, mode }),
-      });
+        const res = await fetch("/api/grading", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answerKeyCsv, studentAnswersCsv, mode }),
+        });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Grading failed.");
-        return;
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "Grading failed.");
+          return;
+        }
+
+        const data: GradingReport = await res.json();
+        setReport(data);
+      } catch {
+        setError("Network error. Please try again.");
       }
-
-      const data: GradingReport = await res.json();
-      setReport(data);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   return (
@@ -132,8 +131,8 @@ export function GradingPanel() {
               </Select>
             </div>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Grading…" : "Grade exams"}
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Grading…" : "Grade exams"}
             </Button>
           </form>
         </CardContent>

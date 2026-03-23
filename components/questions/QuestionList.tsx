@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -21,21 +21,24 @@ interface Props {
 export function QuestionList({ questions }: Props) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     if (!confirm("Delete this question? This action cannot be undone.")) return;
 
     setDeletingId(id);
-    try {
-      const res = await fetch(`/api/questions/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        alert("Failed to delete question.");
-        return;
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/questions/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          alert("Failed to delete question.");
+          return;
+        }
+        router.refresh();
+      } finally {
+        setDeletingId(null);
       }
-      router.refresh();
-    } finally {
-      setDeletingId(null);
-    }
+    });
   }
 
   if (questions.length === 0) {

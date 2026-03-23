@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ export function QuestionForm({ initialData }: Props) {
       : [emptyAlternative(), emptyAlternative()]
   );
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   function addAlternative() {
     setAlternatives((prev) => [...prev, emptyAlternative()]);
@@ -56,7 +56,7 @@ export function QuestionForm({ initialData }: Props) {
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -68,32 +68,31 @@ export function QuestionForm({ initialData }: Props) {
       })),
     };
 
-    setLoading(true);
-    try {
-      const url = isEdit
-        ? `/api/questions/${initialData!.id}`
-        : "/api/questions";
-      const method = isEdit ? "PUT" : "POST";
+    startTransition(async () => {
+      try {
+        const url = isEdit
+          ? `/api/questions/${initialData!.id}`
+          : "/api/questions";
+        const method = isEdit ? "PUT" : "POST";
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "An unexpected error occurred.");
-        return;
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "An unexpected error occurred.");
+          return;
+        }
+
+        router.push("/questions");
+        router.refresh();
+      } catch {
+        setError("Network error. Please try again.");
       }
-
-      router.push("/questions");
-      router.refresh();
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   return (
@@ -181,8 +180,8 @@ export function QuestionForm({ initialData }: Props) {
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={loading}>
-          {loading ? "Saving…" : isEdit ? "Save changes" : "Create question"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving…" : isEdit ? "Save changes" : "Create question"}
         </Button>
         <Button
           type="button"

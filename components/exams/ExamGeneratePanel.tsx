@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,34 +15,33 @@ interface Props {
 
 export function ExamGeneratePanel({ examId, questionCount }: Props) {
   const [count, setCount] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [isGenerating, startGenerate] = useTransition();
+  const [isPdfPending, startPdf] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerationResult | null>(null);
 
-  async function handleGenerate(e: React.FormEvent) {
+  function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/exams/${examId}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "Generation failed.");
-        return;
+    startGenerate(async () => {
+      try {
+        const res = await fetch(`/api/exams/${examId}/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "Generation failed.");
+          return;
+        }
+        const data: GenerationResult = await res.json();
+        setResult(data);
+      } catch {
+        setError("Network error. Please try again.");
       }
-      const data: GenerationResult = await res.json();
-      setResult(data);
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   function downloadCsv() {
@@ -56,33 +55,32 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
     URL.revokeObjectURL(url);
   }
 
-  async function downloadPdfs() {
+  function downloadPdfs() {
     if (!result) return;
-    setPdfLoading(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/exams/${examId}/generate?format=pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? "PDF generation failed.");
-        return;
+    startPdf(async () => {
+      try {
+        const res = await fetch(`/api/exams/${examId}/generate?format=pdf`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "PDF generation failed.");
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "exams.zip";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        setError("Network error while generating PDFs. Please try again.");
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "exams.zip";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      setError("Network error while generating PDFs. Please try again.");
-    } finally {
-      setPdfLoading(false);
-    }
+    });
   }
 
   return (
@@ -109,8 +107,8 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
                 {questionCount !== 1 ? "s" : ""} in a randomised order.
               </p>
             </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Generating…" : "Generate"}
+            <Button type="submit" disabled={isGenerating}>
+              {isGenerating ? "Generating…" : "Generate"}
             </Button>
           </form>
         </CardContent>
@@ -148,8 +146,8 @@ export function ExamGeneratePanel({ examId, questionCount }: Props) {
               <Button variant="outline" onClick={downloadCsv}>
                 Download answer_key.csv
               </Button>
-              <Button variant="outline" onClick={downloadPdfs} disabled={pdfLoading}>
-                {pdfLoading ? "Generating PDFs…" : "Download PDFs (ZIP)"}
+              <Button variant="outline" onClick={downloadPdfs} disabled={isPdfPending}>
+                {isPdfPending ? "Generating PDFs…" : "Download PDFs (ZIP)"}
               </Button>
             </div>
           </CardContent>

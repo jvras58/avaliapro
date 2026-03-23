@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
@@ -10,31 +10,28 @@ interface Props {
 
 export function ExamDeleteButton({ examId }: Props) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!confirm("Delete this exam? This action cannot be undone.")) return;
-    setLoading(true);
-    try {
+    startTransition(async () => {
       const res = await fetch(`/api/exams/${examId}`, { method: "DELETE" });
       if (!res.ok) {
         alert("Failed to delete exam.");
         return;
       }
       router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    });
   }
 
   return (
     <Button
       variant="destructive"
       size="sm"
-      disabled={loading}
+      disabled={isPending}
       onClick={handleDelete}
     >
-      {loading ? "Deleting…" : "Delete"}
+      {isPending ? "Deleting…" : "Delete"}
     </Button>
   );
 }
