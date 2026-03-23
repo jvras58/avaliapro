@@ -25,7 +25,6 @@ export function Navbar() {
         <Link href="/" className="font-semibold text-lg tracking-tight">
           AvaliaPro
         </Link>
-        <Separator orientation="vertical" className="h-6" />
         <nav className="flex items-center gap-4">
           {navLinks.map(({ href, label }) => {
             const active = pathname.startsWith(href);
