@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -13,35 +12,37 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import type { Question } from "@/domain/types";
+import { queryKeys, fetchQuestions, deleteQuestion } from "@/lib/api";
 
 interface Props {
   questions: Question[];
 }
 
 export function QuestionList({ questions }: Props) {
-  const router = useRouter();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const { data } = useQuery({
+    queryKey: queryKeys.questions,
+    queryFn: fetchQuestions,
+    initialData: questions,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteQuestion,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.questions });
+    },
+    onError: () => {
+      alert("Failed to delete question.");
+    },
+  });
 
   function handleDelete(id: string) {
     if (!confirm("Delete this question? This action cannot be undone.")) return;
-
-    setDeletingId(id);
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/questions/${id}`, { method: "DELETE" });
-        if (!res.ok) {
-          alert("Failed to delete question.");
-          return;
-        }
-        router.refresh();
-      } finally {
-        setDeletingId(null);
-      }
-    });
+    deleteMutation.mutate(id);
   }
 
-  if (questions.length === 0) {
+  if (data.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
         No questions yet.{" "}
@@ -62,7 +63,7 @@ export function QuestionList({ questions }: Props) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {questions.map((q) => (
+        {data.map((q) => (
           <TableRow key={q.id}>
             <TableCell className="max-w-xl">
               <p className="line-clamp-2">{q.statement}</p>
@@ -77,10 +78,15 @@ export function QuestionList({ questions }: Props) {
               <Button
                 variant="destructive"
                 size="sm"
-                disabled={deletingId === q.id}
+                disabled={
+                  deleteMutation.isPending &&
+                  deleteMutation.variables === q.id
+                }
                 onClick={() => handleDelete(q.id)}
               >
-                {deletingId === q.id ? "Deleting…" : "Delete"}
+                {deleteMutation.isPending && deleteMutation.variables === q.id
+                  ? "Deleting…"
+                  : "Delete"}
               </Button>
             </TableCell>
           </TableRow>
