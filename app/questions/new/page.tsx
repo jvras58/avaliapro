@@ -1,4 +1,9 @@
 import { QuestionForm } from "@/components/questions/QuestionForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "New Question",
+};
 
 export default function NewQuestionPage() {
   return (

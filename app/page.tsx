@@ -3,6 +3,11 @@ import { listQuestions } from "@/domain/questions";
 import { listExams } from "@/domain/exams";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+};
 
 export default async function HomePage() {
   const [questions, exams] = await Promise.all([listQuestions(), listExams()]);

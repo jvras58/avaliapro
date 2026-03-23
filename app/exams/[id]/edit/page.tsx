@@ -2,6 +2,11 @@ import { notFound } from "next/navigation";
 import { getExam } from "@/domain/exams";
 import { listQuestions } from "@/domain/questions";
 import { ExamForm } from "@/components/exams/ExamForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Edit Exam",
+};
 
 interface Props {
   params: Promise<{ id: string }>;

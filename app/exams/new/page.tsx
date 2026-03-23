@@ -1,5 +1,10 @@
 import { listQuestions } from "@/domain/questions";
 import { ExamForm } from "@/components/exams/ExamForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "New Exam",
+};
 
 export default async function NewExamPage() {
   const questions = await listQuestions();

@@ -2,6 +2,11 @@ import Link from "next/link";
 import { listQuestions } from "@/domain/questions";
 import { QuestionList } from "@/components/questions/QuestionList";
 import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Questions",
+};
 
 export default async function QuestionsPage() {
   const questions = await listQuestions();

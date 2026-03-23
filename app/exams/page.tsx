@@ -2,6 +2,11 @@ import Link from "next/link";
 import { listExams } from "@/domain/exams";
 import { Button } from "@/components/ui/button";
 import { ExamList } from "@/components/exams/ExamList";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Exams",
+};
 
 export default async function ExamsPage() {
   const exams = await listExams();

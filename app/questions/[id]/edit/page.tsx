@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { getQuestion } from "@/domain/questions";
 import { QuestionForm } from "@/components/questions/QuestionForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Edit Question",
+};
 
 interface Props {
   params: Promise<{ id: string }>;

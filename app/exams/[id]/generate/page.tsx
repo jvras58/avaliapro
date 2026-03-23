@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { getExam } from "@/domain/exams";
 import { ExamGeneratePanel } from "@/components/exams/ExamGeneratePanel";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Generate Exam",
+};
 
 interface Props {
   params: Promise<{ id: string }>;

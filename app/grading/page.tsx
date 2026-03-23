@@ -1,4 +1,9 @@
 import { GradingPanel } from "@/components/grading/GradingPanel";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Grading",
+};
 
 export default function GradingPage() {
   return (
