@@ -19,6 +19,10 @@ export interface AvaliaProWorld extends World {
   lastAnswerKeyCsv: string;
   lastStudentAnswersCsv: string;
   lastGradingReport: GradingReport | null;
+
+  // ---- PDF / ZIP ----
+  lastPdfBuffer: Buffer | null;
+  lastZipBuffer: Buffer | null;
 }
 
 class AvaliaProWorldImpl extends World implements AvaliaProWorld {
@@ -35,6 +39,9 @@ class AvaliaProWorldImpl extends World implements AvaliaProWorld {
   lastAnswerKeyCsv: string = "";
   lastStudentAnswersCsv: string = "";
   lastGradingReport: GradingReport | null = null;
+
+  lastPdfBuffer: Buffer | null = null;
+  lastZipBuffer: Buffer | null = null;
 
   constructor(options: IWorldOptions) {
     super(options);
