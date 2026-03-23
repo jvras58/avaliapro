@@ -12,7 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/layout/EmptyState";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
 import type { Question } from "@/domain/types";
 import { queryKeys, fetchQuestions, deleteQuestion } from "@/lib/api";
 
@@ -48,16 +55,24 @@ export function QuestionList({ questions, onCreateClick }: Props) {
 
   if (data.length === 0) {
     return (
-      <EmptyState
-        icon={<ClipboardList className="h-7 w-7" />}
-        title="No questions yet"
-        description="Create your first question to start building exams."
-        action={
-          onCreateClick
-            ? { label: "New question", onClick: onCreateClick }
-            : undefined
-        }
-      />
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <ClipboardList />
+          </EmptyMedia>
+          <EmptyTitle>No questions yet</EmptyTitle>
+          <EmptyDescription>
+            Create your first question to start building exams.
+          </EmptyDescription>
+        </EmptyHeader>
+        {onCreateClick && (
+          <EmptyContent>
+            <Button onClick={onCreateClick}>
+              New question
+            </Button>
+          </EmptyContent>
+        )}
+      </Empty>
     );
   }
 

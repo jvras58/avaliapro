@@ -13,7 +13,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/layout/EmptyState";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
 import type { Exam } from "@/domain/types";
 import { queryKeys, fetchExams, deleteExam } from "@/lib/api";
 
@@ -49,16 +56,24 @@ export function ExamList({ exams, onCreateClick }: Props) {
 
   if (data.length === 0) {
     return (
-      <EmptyState
-        icon={<FileText className="h-7 w-7" />}
-        title="No exams yet"
-        description="Create your first exam by selecting questions and configuring the details."
-        action={
-          onCreateClick
-            ? { label: "New exam", onClick: onCreateClick }
-            : undefined
-        }
-      />
+      <Empty className="border">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FileText />
+          </EmptyMedia>
+          <EmptyTitle>No exams yet</EmptyTitle>
+          <EmptyDescription>
+            Create your first exam by selecting questions and configuring the details.
+          </EmptyDescription>
+        </EmptyHeader>
+        {onCreateClick && (
+          <EmptyContent>
+            <Button onClick={onCreateClick}>
+              New exam
+            </Button>
+          </EmptyContent>
+        )}
+      </Empty>
     );
   }
 
