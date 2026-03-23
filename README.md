@@ -47,6 +47,8 @@ AvaliaPro supports the full exam lifecycle:
 |---|---|
 | Framework | Next.js 16, App Router |
 | UI | React 19, shadcn/ui, Tailwind CSS 4 |
+| Forms & Validation | React Hook Form, Zod |
+| Data fetching | TanStack Query |
 | ORM | Prisma 6 |
 | Database | SQLite (dev) |
 | Language | TypeScript 5 (strict) |
@@ -76,13 +78,15 @@ avaliapro/
 │   ├── exams/                  # Exam pages (list, new, edit, generate)
 │   └── grading/                # Grading page
 ├── components/                 # React components
-│   ├── layout/Navbar.tsx
+│   ├── layout/
+│   │   ├── Navbar.tsx           # Navbar
+│   │   ├── QueryProvider.tsx    # Config Use Query provider
 │   ├── questions/
 │   │   ├── QuestionForm.tsx    # Create/edit form with dynamic alternatives
 │   │   └── QuestionList.tsx    # Table with edit/delete actions
 │   ├── exams/
 │   │   ├── ExamForm.tsx        # Create/edit form with question picker
-│   │   ├── ExamDeleteButton.tsx # Isolated client delete button
+│   │   ├── ExamList.tsx        # List with questions
 │   │   └── ExamGeneratePanel.tsx # Count input, generation trigger, CSV download
 │   ├── grading/
 │   │   └── GradingPanel.tsx    # File upload, mode select, results table
@@ -95,6 +99,7 @@ avaliapro/
 │   └── grading.ts              # Grading logic and CSV parsing
 ├── lib/
 │   └── prisma.ts               # Prisma client singleton
+│   └── api.ts                  # Fetchs
 ├── prisma/
 │   ├── schema.prisma           # Database schema
 │   └── migrations/             # Migration history
