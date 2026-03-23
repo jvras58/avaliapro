@@ -424,6 +424,30 @@ DATABASE_URL="file:./prisma/dev.db"
 EOF
 ```
 
+### 2.1) Rodar com Docker + Compose (completo)
+
+Se você quer usar Docker para execução completa, o projeto suporta:
+
+- `Dockerfile` multistage (build + runtime)
+- `docker-compose.yml` com serviço `avaliapro` e `db`
+
+Comandos:
+
+```bash
+docker compose build
+docker compose up -d
+# opcional: ver logs
+docker compose logs --follow
+# parar
+docker compose down
+```
+
+- A aplicação ficará acessível em `http://localhost:3000`.
+- O banco Postgres em `localhost:5432` (usuário/senha/postgres).
+
+> Dica: em produção, use `docker compose up --build -d` e variável `NODE_ENV=production`.
+
+
 ### 3) Migrar banco e gerar Prisma client
 
 ```bash
