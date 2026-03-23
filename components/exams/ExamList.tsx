@@ -26,6 +26,10 @@ export function ExamList({ exams }: Props) {
     queryKey: queryKeys.exams,
     queryFn: fetchExams,
     initialData: exams,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const deleteMutation = useMutation({

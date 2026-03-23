@@ -25,6 +25,10 @@ export function QuestionList({ questions }: Props) {
     queryKey: queryKeys.questions,
     queryFn: fetchQuestions,
     initialData: questions,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const deleteMutation = useMutation({
