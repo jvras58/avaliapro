@@ -4,6 +4,8 @@ import { listQuestions } from "@/domain/questions";
 import { ExamForm } from "@/components/exams/ExamForm";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Edit Exam",
 };

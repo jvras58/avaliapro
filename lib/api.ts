@@ -27,13 +27,13 @@ export const queryKeys = {
 // ---------------------------------------------------------------------------
 
 export async function fetchQuestions(): Promise<Question[]> {
-  const res = await fetch("/api/questions");
+  const res = await fetch("/api/questions", { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch questions");
   return res.json();
 }
 
 export async function fetchQuestion(id: string): Promise<Question> {
-  const res = await fetch(`/api/questions/${id}`);
+  const res = await fetch(`/api/questions/${id}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch question");
   return res.json();
 }
@@ -79,13 +79,13 @@ export async function deleteQuestion(id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function fetchExams(): Promise<Exam[]> {
-  const res = await fetch("/api/exams");
+  const res = await fetch("/api/exams", { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch exams");
   return res.json();
 }
 
 export async function fetchExam(id: string): Promise<Exam> {
-  const res = await fetch(`/api/exams/${id}`);
+  const res = await fetch(`/api/exams/${id}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch exam");
   return res.json();
 }

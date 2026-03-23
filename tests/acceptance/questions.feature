@@ -76,6 +76,17 @@ Funcionalidade: Gerenciamento de questões
       | Única     | true        |
     Então devo receber um erro de validação
 
+  Cenário: Recarregar a lista mantém a questão criada
+    Quando eu crio uma questão com os dados:
+      | enunciado     | Qual é a capital do Brasil?  |
+    E adiciono as seguintes alternativas:
+      | descrição   | deve marcar |
+      | Brasília    | true        |
+      | São Paulo   | false       |
+      | Rio de Janeiro | false    |
+    Então a questão deve ser criada com sucesso
+    E a lista de questões deve conter 1 questão
+
   Cenário: Tentar buscar questão inexistente deve retornar não encontrado
     Quando eu busco a questão com id "id-que-nao-existe"
     Então devo receber resposta de não encontrado

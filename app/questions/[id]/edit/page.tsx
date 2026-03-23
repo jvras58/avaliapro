@@ -3,6 +3,8 @@ import { getQuestion } from "@/domain/questions";
 import { QuestionForm } from "@/components/questions/QuestionForm";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Edit Question",
 };
