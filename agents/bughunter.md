@@ -14,7 +14,6 @@ Your tasks:
 
 1. Start from a user report (e.g., "question is created but disappears on refresh").
 2. Reproduce in code with script and tests.
-3. Inspect page-level server components for App Router rendering mode (`dynamic`/`force-dynamic`).
-4. Inspect `fetch` calls and `react-query` setup in components, including the use of `useQuery`/`useMutation` from TanStack Query.
-5. Inspect API route headers (Cache-Control) and add `no-store` for mutable resources.
-6. Add at least one regression test that validates updated behavior.
+4. Inspect `fetch` calls and `react-query` setup in components, including the use of `useQuery`/`useMutation` from TanStack Query. Prefer 1) proper cache invalidation 2) refetch-on-mount and 3) client state updates over broad application-level forced dynamic.
+5. Inspect API route headers (Cache-Control) and add `no-store` for mutable resources only where appropriate, while keeping default static behavior for read-only or highly-static routes.
+6. Add at least one regression test that validates updated behavior and confirm a resolve path that avoids `force-dynamic` when possible.
