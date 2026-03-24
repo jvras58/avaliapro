@@ -21,7 +21,8 @@ interface Props {
 }
 
 export function ExamManager({ initialExams, allQuestions }: Props) {
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingExam, setEditingExam] = useState<Exam | null>(null);
 
   return (
     <div className="space-y-6">
@@ -33,7 +34,7 @@ export function ExamManager({ initialExams, allQuestions }: Props) {
             Build and manage exams. Each exam randomises question and alternative order on generation.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)} className="shrink-0">
+        <Button onClick={() => setCreateOpen(true)} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           New exam
         </Button>
@@ -44,11 +45,12 @@ export function ExamManager({ initialExams, allQuestions }: Props) {
       {/* List */}
       <ExamList
         exams={initialExams}
-        onCreateClick={() => setOpen(true)}
+        onCreateClick={() => setCreateOpen(true)}
+        onEditClick={(exam) => setEditingExam(exam)}
       />
 
-      {/* Creation dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Exam</DialogTitle>
@@ -58,9 +60,32 @@ export function ExamManager({ initialExams, allQuestions }: Props) {
           </DialogHeader>
           <ExamForm
             allQuestions={allQuestions}
-            onSuccess={() => setOpen(false)}
-            onCancel={() => setOpen(false)}
+            onSuccess={() => setCreateOpen(false)}
+            onCancel={() => setCreateOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog
+        open={editingExam !== null}
+        onOpenChange={(open) => { if (!open) setEditingExam(null); }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Exam</DialogTitle>
+            <DialogDescription>
+              Update the exam details or question selection.
+            </DialogDescription>
+          </DialogHeader>
+          {editingExam && (
+            <ExamForm
+              allQuestions={allQuestions}
+              initialData={editingExam}
+              onSuccess={() => setEditingExam(null)}
+              onCancel={() => setEditingExam(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

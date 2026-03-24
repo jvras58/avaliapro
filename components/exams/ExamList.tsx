@@ -28,9 +28,11 @@ interface Props {
   exams: Exam[];
   /** Called when the empty-state CTA is clicked (e.g. to open the inline form) */
   onCreateClick?: () => void;
+  /** Called when the Edit button is clicked for an exam */
+  onEditClick?: (exam: Exam) => void;
 }
 
-export function ExamList({ exams, onCreateClick }: Props) {
+export function ExamList({ exams, onCreateClick, onEditClick }: Props) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
@@ -110,9 +112,15 @@ export function ExamList({ exams, onCreateClick }: Props) {
               <Button asChild variant="outline" size="sm">
                 <Link href={`/exams/${exam.id}/generate`}>Generate</Link>
               </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/exams/${exam.id}/edit`}>Edit</Link>
-              </Button>
+              {onEditClick ? (
+                <Button variant="outline" size="sm" onClick={() => onEditClick(exam)}>
+                  Edit
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/exams/${exam.id}/edit`}>Edit</Link>
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 size="sm"

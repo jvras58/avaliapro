@@ -27,9 +27,11 @@ interface Props {
   questions: Question[];
   /** Called when the empty-state CTA is clicked (e.g. to open the inline form) */
   onCreateClick?: () => void;
+  /** Called when the Edit button is clicked for a question */
+  onEditClick?: (question: Question) => void;
 }
 
-export function QuestionList({ questions, onCreateClick }: Props) {
+export function QuestionList({ questions, onCreateClick, onEditClick }: Props) {
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
@@ -95,9 +97,15 @@ export function QuestionList({ questions, onCreateClick }: Props) {
               {q.alternatives.length}
             </TableCell>
             <TableCell className="text-right space-x-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/questions/${q.id}/edit`}>Edit</Link>
-              </Button>
+              {onEditClick ? (
+                <Button variant="outline" size="sm" onClick={() => onEditClick(q)}>
+                  Edit
+                </Button>
+              ) : (
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/questions/${q.id}/edit`}>Edit</Link>
+                </Button>
+              )}
               <Button
                 variant="destructive"
                 size="sm"

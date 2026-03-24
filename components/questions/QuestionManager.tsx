@@ -20,7 +20,8 @@ interface Props {
 }
 
 export function QuestionManager({ initialQuestions }: Props) {
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
   return (
     <div className="space-y-6">
@@ -32,7 +33,7 @@ export function QuestionManager({ initialQuestions }: Props) {
             Manage your question bank. Questions can be reused across multiple exams.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)} className="shrink-0">
+        <Button onClick={() => setCreateOpen(true)} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           New question
         </Button>
@@ -43,11 +44,12 @@ export function QuestionManager({ initialQuestions }: Props) {
       {/* List */}
       <QuestionList
         questions={initialQuestions}
-        onCreateClick={() => setOpen(true)}
+        onCreateClick={() => setCreateOpen(true)}
+        onEditClick={(q) => setEditingQuestion(q)}
       />
 
-      {/* Creation dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Question</DialogTitle>
@@ -56,9 +58,31 @@ export function QuestionManager({ initialQuestions }: Props) {
             </DialogDescription>
           </DialogHeader>
           <QuestionForm
-            onSuccess={() => setOpen(false)}
-            onCancel={() => setOpen(false)}
+            onSuccess={() => setCreateOpen(false)}
+            onCancel={() => setCreateOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog
+        open={editingQuestion !== null}
+        onOpenChange={(open) => { if (!open) setEditingQuestion(null); }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Question</DialogTitle>
+            <DialogDescription>
+              Update the statement or alternatives below.
+            </DialogDescription>
+          </DialogHeader>
+          {editingQuestion && (
+            <QuestionForm
+              initialData={editingQuestion}
+              onSuccess={() => setEditingQuestion(null)}
+              onCancel={() => setEditingQuestion(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
