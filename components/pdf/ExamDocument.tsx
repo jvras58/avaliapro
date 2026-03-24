@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  renderToBuffer,
 } from "@react-pdf/renderer";
 import type { GeneratedExam } from "@/domain/types";
 
@@ -135,10 +134,10 @@ function altLabel(index: number, mode: GeneratedExam["identificationMode"]): str
 }
 
 // ---------------------------------------------------------------------------
-// PDF template
+// PDF template component
 // ---------------------------------------------------------------------------
 
-function ExamDocument({ exam }: { exam: GeneratedExam }) {
+export function ExamDocument({ exam }: { exam: GeneratedExam }) {
   return (
     <Document title={`${exam.title} — Versão ${exam.examNumber}`}>
       <Page size="A4" style={styles.page}>
@@ -204,12 +203,3 @@ function ExamDocument({ exam }: { exam: GeneratedExam }) {
     </Document>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-export async function renderExamPdf(exam: GeneratedExam): Promise<Buffer> {
-  return renderToBuffer(<ExamDocument exam={exam} />);
-}
-
