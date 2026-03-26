@@ -1,32 +1,116 @@
-# Revisão do Sistema do Barbara Mota (https://github.com/Babi-Mota/experimento-agentesIA)
+# Revisão do Sistema – AvaliaPro
 
-## A Revisão do Sistema
+## 1. Funcionalidade
 
-**1. O sistema está funcionando com as funcionalidades solicitadas?**
-A análise da estrutura do repositório indica que a arquitetura central necessária para o funcionamento das funcionalidades solicitadas foi estabelecida. O backend foi dividido claramente em módulos, com rotas independentes para gerenciar questões (`questionRoutes.ts`) e provas (`examRoutes.ts`). Os serviços correspondentes cobrem todo o escopo do negócio: desde a manipulação e geração das avaliações (`examGenerationService.ts` e `examService.ts`), passando pela rotina de verificação (`examCorrectionService.ts`), até as emissões e relatórios (como `pdfExportService.ts` e `classReportService.ts`). O frontend acompanha o modelo utilizando React com páginas separadas (`Exams.tsx`, `Questions.tsx`, `Reports.tsx`) para o controle da interface com o usuário.
+O sistema implementa as principais funcionalidades solicitadas, incluindo gerenciamento de questões, criação de provas e geração de relatórios.
 
-**2. Quais os problemas de qualidade do código e dos testes?**
-O código é organizado e a adoção do TypeScript ajuda na prevenção de erros criando contratos estáticos de tipagem entre as partes da aplicação. O maior problema estrutural, no entanto, é o uso de repositórios em memória (`In-memory repository`) nos serviços do backend. Isso acarreta a perda completa dos dados cadastrados (provas, questões) a cada reinicialização do servidor, sendo uma solução aceitável para um protótipo, mas insustentável para um ambiente produtivo. 
-Quanto aos testes, o uso da sintaxe BDD através de arquivos `.feature` (como `exam.feature` e `questions.feature`) é uma escolha excelente para atrelar regras de negócio ao código de maneira legível. Contudo, não há indicativos fortes de testes unitários que aprofundem validações nos casos extremos da lógica matemática de distribuição de pontos e alternativas.
+Durante os testes práticos utilizando a aplicação implantada (Vercel), observou-se o seguinte:
 
-**3. Como a funcionalidade e a qualidade desse sistema pode ser comparada com as do seu sistema?**
-A arquitetura escolhida (Node.js, Express, React, TypeScript) é bastante familiar e se alinha à construção clássica de sistemas full-stack. Entretanto, em aplicações focadas no gerenciamento educacional e na correção de provas automatizadas, a utilização de backends em Python, como o FastAPI, normalmente facilita a integração com bibliotecas de visão computacional (como OpenCV e Tesseract) para agregar recursos avançados de reconhecimento óptico de marcas (OMR). O sistema revisado se concentra de forma pragmática e exclusiva no fluxo web interativo tradicional (CRUD), entregando uma experiência ágil no navegador sem depender de infraestruturas complexas de persistência de dados.
+* As questões podem ser criadas com sucesso.
+* A interface é limpa e estruturada.
+* No entanto, ao tentar criar uma prova, o sistema exibiu:
+  "No questions available. Create some first." (Nenhuma questão disponível. Crie algumas primeiro.)
+
+Isso ocorreu mesmo após várias questões já terem sido criadas.
+
+Isso indica que, embora a funcionalidade exista, o sistema não é totalmente funcional no uso real.
 
 ---
 
-## A Revisão do Histórico do Desenvolvimento
+## 2. Qualidade do Código e dos Testes
 
-**1. Estratégias de interação utilizada**
-A abordagem principal consistiu em prover todo o contexto simultaneamente ("Zero-shot" estruturado). O prompt indicou claramente um documento base (`SPEC.md`) e solicitou ao agente que criasse a arquitetura backend inteira a partir dele, exigindo de uma só vez a criação da infraestrutura fundamental de pastas, o arquivo do servidor (`server.ts`) e a definição da stack (Node.js, Express e TypeScript).
+### Pontos Fortes:
+* Estrutura do projeto bem organizada
+* Clara separação de responsabilidades (frontend, API, domínio)
+* Bom uso de tecnologias modernas (Next.js, Prisma, TypeScript)
+* Presença de testes automatizados (Cucumber)
 
-**2. Situações em que o agente funcionou melhor ou pior**
-O agente demonstrou excelente produtividade na fase de inicialização ("scaffolding"). Gerar as configurações pesadas e organizar os arquivos de serviços e rotas evitou horas de trabalho braçal. O lado negativo emergiu na configuração do estado de armazenamento: por não ter recebido instruções determinantes para integrar um banco de dados relacional com ferramentas de migração, o modelo priorizou atalhos para entregar o código executável mais rápido, adotando persistência em memória.
+### Problemas:
+* Possível falta de sincronização de estado entre os componentes
+* O frontend não reflete os dados atualizados após a criação das questões
+* Provável falta de *refetch* (nova busca de dados) ou invalidação de cache
+* Potencial excesso de engenharia (*overengineering*) com muitas ferramentas para um sistema relativamente simples
 
-**3. Tipos de problemas observados**
-Em abordagens onde o agente precisa idealizar rotas, serviços e servidor em um único passo, costumam surgir pequenas inconsistências em importações relativas e falhas ocasionais ao lidar com pacotes ainda não instalados (necessitando checagem de `package.json` vs imports no código). A estrutura simplificada de armazenamento também impõe a necessidade de futura refatoração manual severa caso se deseje atrelar o sistema a um banco real (como PostgreSQL ou MySQL).
+Em relação aos testes:
+* Os testes parecem bem estruturados.
+* No entanto, problemas no fluxo real do usuário (como o que foi encontrado) sugerem lacunas nos testes de integração.
 
-**4. Avaliação geral da utilidade do agente no desenvolvimento**
-A utilidade foi muito alta como acelerador do ciclo de desenvolvimento. Ele se destacou na função de estruturar as camadas iniciais de componentes visuais do Vite e no boilerplate de um servidor Express, permitindo ao desenvolvedor investir mais tempo na validação do fluxo das páginas e menos tempo escrevendo as sintaxes de configuração inerentes ao TypeScript.
+---
 
-**5. Comparação com a sua experiência de uso do agente**
-O uso de agentes de Inteligência Artificial voltado para arquiteturas de software pode adquirir contornos bastante complexos, como a construção de ecossistemas orquestrados que realizam interações autônomas avançadas e focam proativamente em tarefas intrincadas, como segurança ou visão computacional. Neste projeto avaliado, a colega adotou uma via muito mais direta e prática, tratando o agente fundamentalmente como um "coding copilot". O objetivo foi puramente utilitário: transformar rapidamente um arquivo de especificações em um produto web interativo e funcional em curto espaço de tempo.
+# Revisão do Processo de Desenvolvimento
+
+## 1. Estratégia de Interação
+
+O desenvolvimento parece seguir uma estratégia de *prompting* iterativo, onde o agente foi utilizado para:
+
+* gerar a estrutura inicial
+* organizar a arquitetura
+* ... e design modular).
+
+---
+
+## 2. Desempenho do Agente
+
+O agente teve um bom desempenho em:
+
+* gerar código *boilerplate* (código base)
+* estruturar o projeto
+* produzir documentação
+
+No entanto, teve dificuldades com:
+
+* garantir a consistência entre o frontend e o backend
+* lidar com cenários reais de fluxo de dados
+* manter a sincronização entre os componentes
+
+---
+
+## 3. Problemas Observados
+
+* Frontend não atualizando após a criação de dados
+* Tratamento de estado inconsistente
+* Possíveis problemas de cache
+* Interface de usuário permitindo ações que falham posteriormente (feedback de UX ruim)
+
+---
+
+## 4. Resultados dos Testes Práticos
+
+Durante os testes da aplicação implantada:
+
+* As questões foram criadas com sucesso
+* Ao criar uma prova, o sistema não detectou as questões existentes
+* A mensagem "Nenhuma questão disponível" foi exibida incorretamente
+
+Isso sugere:
+
+* falta de *refetch* (recarga) dos dados
+* ou vinculação incorreta de dados (*data binding*) no componente de criação de provas
+
+Este é um problema crítico de usabilidade, pois bloqueia uma funcionalidade principal.
+
+---
+
+## 5. Avaliação Geral do Agente
+
+O agente foi útil para:
+
+* acelerar o desenvolvimento
+* organizar a estrutura do código
+* gerar documentação
+
+No entanto, intervenção manual ainda é necessária para:
+
+* validar os fluxos reais
+* corrigir problemas de integração
+* garantir a usabilidade
+
+---
+
+## Conclusão
+
+O sistema está bem estruturado e cobre os recursos solicitados, mas os testes práticos revelaram problemas importantes de usabilidade e integração.
+
+Isso reforça que:
+
+Sistemas gerados por IA devem sempre ser validados por meio de cenários de uso real, e não apenas por inspeção de código.
