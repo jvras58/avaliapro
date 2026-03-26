@@ -3,8 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: avaliapro
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
     depends_on:
@@ -18,4 +22,3 @@ services:
       - POSTGRES_DB=avaliapro
     ports:
       - "5432:5432"
-    
